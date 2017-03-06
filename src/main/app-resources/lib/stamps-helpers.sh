@@ -6,7 +6,7 @@ set_env() {
 #  . ${SAR_HELPERS_HOME}/sar-helpers.sh
 
   # shorter temp path
-  export TMPDIR=/tmp/$( uuidgen )
+  export TMPDIR=/tmp/$1-$( uuidgen )
 
   echo $TMPDIR
 
@@ -23,8 +23,12 @@ set_env() {
   return 0
 }
 
-get_data() {
+check_input_type () { 
   set -x
+  
+}
+
+get_data() {
   local ref=$1
   local target=$2
   local local_file
