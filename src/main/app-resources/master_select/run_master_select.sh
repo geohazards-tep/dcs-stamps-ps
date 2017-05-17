@@ -72,23 +72,36 @@ dem() {
   local bbox
   local wkt
  
+  ciop-log "INFO" "IN DEM"
+ 
   #wkt="$( ciop-casmeta -f "dct:spatial" "${dataset_ref}" )"
   wkt="$( opensearch-client "${dataset_ref}" wkt | head -1 )"
+  
+  ciop-log "INFO" "WKT: ${wkt}"
+  
   [ -n "${wkt}" ] && bbox="$( mbr.py "${wkt}" )" || return 1
 
+  
   wdir=${PWD}/.wdir
   mkdir ${wdir}
   mkdir -p ${target}
+  
+  ciop-log "INFO" "WDIR: ${wdir} and Target: ${target}"  
 
   target=$( cd ${target} && pwd )
 
   cd ${wdir}
   construct_dem.sh dem ${bbox} SRTM3 || return 1
   
+  ciop-log "INFO" "Run construct DEM"  
+  
   cp -v ${wdir}/dem/final_dem.dem ${target}
   cp -v ${wdir}/dem/input.doris_dem ${target}
 
   sed -i "s#\(SAM_IN_DEM *\).*/\(final_dem.dem\)#\1$target/\2#g" ${target}/input.doris_dem
+  
+  ciop-log "INFO" "Run SED"
+  
   cd - &> /dev/null
 
   rm -fr ${wdir}

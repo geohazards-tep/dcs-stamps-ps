@@ -24,6 +24,8 @@ ERR_SLC_AUX_TAR=17
 ERR_SLC_AUX_PUBLISH=19
 ERR_SLC_TAR=21
 ERR_SLC_PUBLISH=23
+ERR_LOOKS_PRM=39
+ERR_CROP_PRM=41
 
 # add a trap to exit gracefully
 function cleanExit() {
@@ -43,6 +45,8 @@ function cleanExit() {
     ${ERR_SLC_AUX_PUBLISH}) msg="Failed to publish archive with master ROI_PAC aux files";;
     ${ERR_SLC_TAR}) msg="Failed to create archive with master slc";;
     ${ERR_SLC_PUBLISH}) msg="Failed to publish archive with master slc";;
+	${ERR_LOOKS_PRM}) msg="Couldn't retrieve looks parameter";;
+	${ERR_CROP_PRM}) msg="Couldn't retrieve crop parameter";;	
   esac
    
   [ "${retval}" != "0" ] && ciop-log "ERROR" \
@@ -74,12 +78,17 @@ main() {
       # which orbits
       orbits="$( get_orbit_flag )"
       [ $? -ne 0 ] && return ${ERR_ORBIT_FLAG}
+	  
+	  # Looks parameter
+	  looks_prm="$( ciop-getparam looks )"
+	  [ $? -ne 0 ] && return ${ERR_LOOKS_PRM}
   
-      #  premaster_ref="$( ciop-getparam master )"
-      #  [ $? -ne 0 ] && return ${ERR_MASTER_REF}
+	  ciop-log "INFO" "Retrieving preliminary master"
+      premaster_ref="$( ciop-getparam master )"
+      [ $? -ne 0 ] && return ${ERR_MASTER_REF}
 
-      ciop-log "INFO" "Retrieving preliminary master"
-      premaster=$( get_data ${scene_ref} ${RAW} ) #for final version
+	  premaster=$( get_data ${premaster_ref} ${RAW} ) #for final version
+      #premaster=$( get_data ${scene_ref} ${RAW} ) #for final version
       [ $? -ne 0 ] && return ${ERR_MASTER_EMPTY}
   
       ciop-log "INFO" "Get sensing date"
@@ -100,6 +109,9 @@ main() {
   
       get_aux "${mission}" "${sensing_date}" "${orbits}"
       [ $? -ne 0 ] && return ${ERR_AUX}
+	  
+	  echo ${looks_prm} > ${SLC}/looks.txt
+	  ## echo ${looks_prm} > INSAR_${sensing_date}/looks.txt
   
       cd ${premaster_folder}
       slc_bin="step_slc_${flag}$( [ ${orbits} == "VOR" ] && [ ${mission} == "asar" ] && echo "_vor" )"
@@ -108,19 +120,70 @@ main() {
       ${slc_bin}
       [ $? -ne 0 ] && return ${ERR_SLC}
  
-      MAS_WIDTH=`grep WIDTH  ${sensing_date}.slc.rsc | awk '{print $2}' `
-      MAS_LENGTH=`grep FILE_LENGTH  ${sensing_date}.slc.rsc | awk '{print $2}' `
+      ## MAS_WIDTH=`grep WIDTH  ${sensing_date}.slc.rsc | awk '{print $2}' `
+      ## MAS_LENGTH=`grep FILE_LENGTH  ${sensing_date}.slc.rsc | awk '{print $2}' `
+	  
+	  MAS_FL="$( ciop-getparam firstline )"
+	  [ $? -ne 0 ] && return ${ERR_CROP_PRM}
+	  MAS_LL="$( ciop-getparam lastline )"
+	  [ $? -ne 0 ] && return ${ERR_CROP_PRM}
+	  MAS_FC="$( ciop-getparam firstcol )"
+	  [ $? -ne 0 ] && return ${ERR_CROP_PRM}
+	  MAS_LC="$( ciop-getparam lastcol )"	  
+	  [ $? -ne 0 ] && return ${ERR_CROP_PRM}
+	  
+	  #MAS_FL=12400
+	  #MAS_LL=16950	
+	  #MAS_FC=280	
+	  #MAS_LC=1640	  
 
       ciop-log "INFO" "Will run step_master_setup"
-      echo "first_l 1" > master_crop.in
-      echo "last_l $MAS_LENGTH" >> master_crop.in
-      echo "first_p 1" >> master_crop.in
-      echo "last_p $MAS_WIDTH" >> master_crop.in
+	  ciop-log "INFO" "$(pwd)"
+	  ## ciop-log "INFO" "$MAS_WIDTH"
+	  ## ciop-log "INFO" "$MAS_LENGTH"
+	  
+	  ciop-log "INFO" "$MAS_FL"
+	  ciop-log "INFO" "$MAS_LL"
+	  ciop-log "INFO" "$MAS_FC"
+	  ciop-log "INFO" "$MAS_LC"
+	  
+      ## echo "first_l 1" > master_crop.in
+      ## echo "last_l $MAS_LENGTH" >> master_crop.in
+      ## echo "first_p 1" >> master_crop.in
+      ## echo "last_p $MAS_WIDTH" >> master_crop.in
+	  
+      echo "first_l $MAS_FL" > master_crop.in
+      echo "last_l $MAS_LL" >> master_crop.in
+      echo "first_p $MAS_FC" >> master_crop.in
+      echo "last_p $MAS_LC" >> master_crop.in
+
+	  roiproc='../roi.proc'
+	  MPR=$(((($MAS_LC-$MAS_FC) / 2) + (($MAS_LC-$MAS_FC) % 2 > 0) ))
+	  MPR=$((MPR + MAS_FC))
+
+	  #echo "use1dopp=1" > $roiproc
+	  #echo "mean_pixel_rng=$MPR" >> $roiproc	  	  
+      #echo "ymin=$MAS_FL" >> $roiproc
+      #echo "ymax=$MAS_LL" >> $roiproc
+	  
+	  echo "before_z_ext= -9000" > $roiproc
+	  echo "after_z_ext= -9000" >> $roiproc
+	  echo "near_rng_ext= +300" >> $roiproc
+	  echo "far_rng_ext= -4500" >> $roiproc	  
+	  	  
       step_master_setup
       [ $? -ne 0 ] && return ${ERR_MASTER_SETUP} 
+	  
+	  #roiproc=${PROCESS%%/}/INSAR_${sensing_date%%/}/roi.proc
+	  
+	  #echo "use1dopp=1" > $roiproc
+	  #echo "mean_pixel_rng=$MPR" >> $roiproc	  	  
+      #echo "ymin=$MAS_FL" >> $roiproc
+      #echo "ymax=$MAS_LL" >> $roiproc	  
  
       cd ${PROCESS}
-      tar cvfz premaster_${sensing_date}.tgz INSAR_${sensing_date} 
+	  echo ${looks_prm} > INSAR_${sensing_date}/looks.txt
+      tar cvfz premaster_${sensing_date}.tgz INSAR_${sensing_date}
       [ $? -ne 0 ] && return ${ERR_SLC_TAR}
 
       premaster_slc_ref="$( ciop-publish -a ${PROCESS}/premaster_${sensing_date}.tgz )"

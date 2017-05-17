@@ -35,6 +35,7 @@ ERR_STEP_ORBIT=25
 ERR_STEP_COARSE=27
 ERR_INSAR_TAR=35
 ERR_INSAR_PUBLISH=37
+ERR_LOOKS_PRM=39
 
 # add a trap to exit gracefully
 cleanExit() {
@@ -58,6 +59,7 @@ cleanExit() {
     ${ERR_SENSING_DATE_MASTER}) msg"Failed ot get Master DAte";;
     ${ERR_STEP_ORBIT}) msg="Failed to process step_orbit";;
     ${ERR_STEP_COARSE}) msg="Failed to process step_coarse";;
+	${ERR_LOOKS_PRM}) msg="Couldn't retrieve looks parameter";;	
   esac
 
   [ "${retval}" != "0" ] && ciop-log "ERROR" \
@@ -81,7 +83,11 @@ main() {
   export PROCESS=${TMPDIR}/PROCESS
   export SLC=${PROCESS}/SLC
   export VOR_DIR=${TMPDIR}/VOR
-  export INS_DIR=${TMPDIR}/INS  
+  export INS_DIR=${TMPDIR}/INS
+
+  # Looks parameter
+  looks_prm="$( ciop-getparam looks )"
+  [ $? -ne 0 ] && return ${ERR_LOOKS_PRM}  
 
   ciop-log "INFO" "creating the directory structure in $TMPDIR"
 
@@ -131,7 +137,23 @@ main() {
     ciop-log "INFO" "Set-up Stamps Structure (i.e. run step link_raw)"
     link_raw ${RAW} ${PROCESS}
     [ $? -ne 0 ] && return ${ERR_LINK_RAW}
+		
+	# Update looks.txt
+	looks=${SLC}/looks.txt
+	echo ${looks_prm} > $looks
+	
+	# Move roi.proc
+	ciop-log "INFO" "Moving ROI-PROC"
+		
+	roiproc=${SLC}/roi.proc
+	#MPR=$(((($MAS_LC-$MAS_FC) / 2) + (($MAS_LC-$MAS_FC) % 2 > 0) ))
+	#MPR=$((MPR + MAS_FC))
 
+	echo "before_z_ext= -9000" > $roiproc
+	echo "after_z_ext= -9000" >> $roiproc
+	echo "near_rng_ext= +300" >> $roiproc
+	echo "far_rng_ext= -4500" >> $roiproc
+	
     # focalize SLC
     scene_folder=${SLC}/${sensing_date}
     cd ${scene_folder}
@@ -169,8 +191,9 @@ main() {
     ciop-log "INFO" "Sensing date before if: $sensing_date"
   
     if [ "${sensing_date}" != "${premaster_date}" ]
-    then
+    then	
       cd ${PROCESS}/INSAR_${premaster_date}
+	  	  
       mkdir ${sensing_date}
       cd ${sensing_date}
 
