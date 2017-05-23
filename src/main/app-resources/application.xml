@@ -4,7 +4,7 @@
 	<jobTemplate id="premaster_prep">
       <streamingExecutable>/application/premaster_prep/run_premaster_prep.sh</streamingExecutable>
  	<defaultParameters>
-            <parameter id="master" title="Candidate master product reference" abstract="Define the canditate master product reference" scope="runtime">file:///home/fbarchetta/master/dims_op_oc_dfd2_487406394_7.tar.gz</parameter>
+            <parameter id="master" title="Candidate master product reference" abstract="Define the canditate master product reference" scope="runtime">https://catalog.terradue.com//noa-terrasar-x/search?uid=TSX1_SAR__SSC______SM_S_SRA_20130508T042926_20130508T042931</parameter>
             <parameter id="orbit" title="Orbits files: for Envisat DOR or VOR, ERS ODR" abstract="Type of orbits files for focussing step with ROI_PAC" scope="runtime">VOR</parameter>
             <!--parameter id="master" title="Candidate master product reference" abstract="Define the canditate master product reference" scope="runtime">https://data2.terradue.com/eop/noa-terrasar-x/dataset/search?format=rdf&amp;uid=TSX1_SAR__SSC______SM_S_SRA_20130519T042927_20130519T042932</parameter-->
       </defaultParameters>
@@ -20,11 +20,13 @@
 	</defaultParameters>
         <defaultJobconf>
           <property id="mapred.task.timeout">9900000000</property>
+          <property id="ciop.job.max.tasks">1</property>
         </defaultJobconf>
     </jobTemplate>
     <jobTemplate id="master_select">
       <streamingExecutable>/application/master_select/run_master_select.sh</streamingExecutable>
 	<defaultParameters>
+		<parameter id="master" title="Candidate master product reference" abstract="Define the canditate master product reference" scope="runtime">https://catalog.terradue.com//noa-terrasar-x/search?uid=TSX1_SAR__SSC______SM_S_SRA_20130508T042926_20130508T042931</parameter>
 	    <parameter id="orbit" title="Orbits files: for Envisat DOR or VOR, ERS ODR" abstract="Type of orbits files for focussing step with ROI_PAC" scope="runtime">VOR</parameter>
 	</defaultParameters>
         <defaultJobconf>
@@ -71,7 +73,7 @@
       <job id="premaster_prep" />
       <sources>
 	<!--source scope="runtime" id="slave" title="Slave product references of the SAR stack to process" abstract="Define the slave products reference to use with StaMPS PS" refid="string:list">https://data2.terradue.com/eop/noa-terrasar-x/dataset/search?format=rdf&amp;uid=TSX1_SAR__SSC______SM_S_SRA_20130508T042926_20130508T042931,https://data2.terradue.com/eop/noa-terrasar-x/dataset/search?format=rdf&amp;uid=TSX1_SAR__SSC______SM_S_SRA_20130427T042926_20130427T042930</source-->
-        <source scope="runtime" id="slave" title="Slave product references of the SAR stack to process" abstract="Define the slave products reference to use with StaMPS PS" refid="string:list">file:///home/fbarchetta/slaves/dims_op_oc_dfd2_487406394_3.tar.gz,file:///home/fbarchetta/slaves/dims_op_oc_dfd2_487406394_5.tar.gz</source>
+        <source scope="runtime" id="slave" title="Slave product references of the SAR stack to process" abstract="Define the slave products reference to use with StaMPS PS" refid="string:list">https://catalog.terradue.com//noa-terrasar-x/search?uid=TSX1_SAR__SSC______SM_S_SRA_20130519T042927_20130519T042932,https://catalog.terradue.com//noa-terrasar-x/search?uid=TSX1_SAR__SSC______SM_S_SRA_20130427T042926_20130427T042930</source>
       </sources>
       <parameters/>
     </node>
