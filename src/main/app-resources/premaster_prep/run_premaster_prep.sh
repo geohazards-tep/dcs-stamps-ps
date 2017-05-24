@@ -3,6 +3,11 @@ mode=$1
 
 export PATH=${_CIOP_APPLICATION_PATH}/master_slc/bin:$PATH
 
+export MANPATH=/opt/libxml2/share/man/:$MANPATH
+
+export PATH=/opt/libxml2/bin/:$PATH
+
+
 # source the ciop functions (e.g. ciop-log)
 [ "${mode}" != "test" ] && source ${ciop_job_include}
 
@@ -54,32 +59,46 @@ function cleanExit() {
 
 trap cleanExit EXIT
 
+
+	  
 main() {
 set -x
   local res
   FIRST="TRUE"
-  
+
+  export TMPDIR=$( set_env $_WF_ID )
+  export RAW=${TMPDIR}/RAW
+  export PROCESS=${TMPDIR}/PROCESS
+  export SLC=${PROCESS}/SLC
+  export VOR_DIR=${TMPDIR}/VOR
+  export INS_DIR=${TMPDIR}/INS
+  cd ${RAW}
+      premaster_ref="$( ciop-getparam master )"
+      [ $? -ne 0 ] && return ${ERR_MASTER_REF}
+      ciop-log "INFO" "Retrieving preliminary master"
+      premaster_ref=$( get_data ${premaster_ref} ${RAW} ) #for final version
+	  [ $? -ne 0 ] && return ${ERR_MASTER_REF}
+	  ciop-log "INFO" "Get sensing date"
+      premaster_ref_date=$( get_sensing_date ${premaster_ref} )
+      [ $? -ne 0 ] && return ${ERR_MASTER_SENSING_DATE}
+	  bname=$( basename ${premaster_ref} )
+	  new_name_temp=$(echo $bname | awk {'print substr($bname,1,59)'} )
+	  ciop-log "INFO" "Name of file: ${new_name_temp}"
+	  #add the "tar.gz" to the file
+	  new_name="${new_name_temp}.tar.gz"
+	  mv ${new_name_temp} ${new_name}
+	  tar xvzf $new_name
+  ciop-log "INFO" "creating the directory structure in $TMPDIR"
   while read scene_ref
   do
- 
-    [ ${FIRST} == "TRUE" ] && {
-      # creates the adore directory structure
-      export TMPDIR=$( set_env $_WF_ID )
-      export RAW=${TMPDIR}/RAW
-      export PROCESS=${TMPDIR}/PROCESS
-      export SLC=${PROCESS}/SLC
-      export VOR_DIR=${TMPDIR}/VOR
-      export INS_DIR=${TMPDIR}/INS
-
-      ciop-log "INFO" "creating the directory structure in $TMPDIR"
-
       ciop-log "INFO" "Retrieving preliminary master"
       premaster=$( get_data ${scene_ref} ${RAW} ) #for final version
       [ $? -ne 0 ] && return ${ERR_MASTER_EMPTY}
-
+      
+      ciop-log "INFO" "Retrieving preliminary master ${scene_ref}"
       mission=$( get_mission ${premaster} | tr "A-Z" "a-z" )
       [ $? -ne 0 ] && return ${ERR_MISSION_MASTER}
-
+	  
       # TODO manage ERS and ALOS
       # [ ${mission} == "alos" ] && flag="alos"
       # [ ${mission} == "ers" ] && flag="ers"
@@ -98,7 +117,7 @@ set -x
         sensing_date=$( get_sensing_date ${premaster} )
         [ $? -ne 0 ] && return ${ERR_MASTER_SENSING_DATE}
 		
-        premaster_folder=${SLC}/${sensing_date}
+        premaster_folder=${SLC}/${premaster_ref_date}
         mkdir -p ${premaster_folder}
 
         get_aux "${mission}" "${sensing_date}" ""
@@ -108,17 +127,28 @@ set -x
 	
         cd ${RAW}
         tar xvzf ${premaster}
-  #      rm -f ${premaster}
+        #for filename in *.tar.gz
+        #do
+        #tar xvzf $filename
+        #rm $filename
+        #done
+        
+        #rm -f ${premaster}
         for f in $(find ./ -name "T*.xml"); do
-          echo info: $f
+         ciop-log "INFO"" $f"
     	  bname=$( basename ${f} )
           sensing_date=$(echo $bname | awk -F '_' {'print substr($13,1,8)'} )
+		  new_name_temp=$(echo $bname | awk {'print substr($bname,1,59)'} )
+	      ciop-log "INFO" "Name of file: ${new_name_temp}"
+		  #add the "tar.gz" to the file
+		  new_name="${new_name_temp}.tar.gz"
+		  mv ${new_name_temp} ${new_name}
+		  ciop-log "INFO" "Name of file: ${new_name}"
         done
         cd ${PROCESS}
         link_slcs ${RAW}
-
+	 ciop-log "INFO" "Linkinng SLCs in ${RAW}"
       fi
-  
       premaster_folder=${SLC}/${sensing_date}
       cd ${premaster_folder}
       #slc_bin="step_slc_${flag}$( [ ${orbits} == "VOR" ] && [ ${mission} == "asar" ] && echo "_vor" )"
@@ -161,15 +191,13 @@ set -x
 
       premaster_slc_ref="$( ciop-publish -a ${PROCESS}/premaster_${sensing_date}.tgz )"
       [ $? -ne 0 ] && return ${ERR_SLC_PUBLISH}
-    }
 
-    echo "${premaster_slc_ref},${scene_ref}" | ciop-publish -s
-    FIRST="FALSE"
-  done
+     echo "${premaster_slc_ref},${scene_ref}" | ciop-publish -s
+	done
 
   ciop-log "INFO" "removing temporary files $TMPDIR"
-  rm -rf ${TMPDIR}
-}
+  #rm -rf ${TMPDIR}
 
+}
 cat | main
 exit $?

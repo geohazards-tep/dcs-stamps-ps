@@ -81,78 +81,73 @@ main() {
   export SLC=${PROCESS}/SLC
   export VOR_DIR=${TMPDIR}/VOR
   export INS_DIR=${TMPDIR}/INS  
-
+  scene=$( get_data ${scene_ref} ${RAW} ) 
   ciop-log "INFO" "creating the directory structure in $TMPDIR"
-
+  
   # download data into $RAW
+  #counter_xml_1=0
   while read line
+  #for filename in *.tar.gz
   do
-    mkdir -p ${RAW}
+    #mkdir -p ${RAW}
     ciop-log "INFO" "Processing input: ${line}"
     IFS=',' read -r premaster_slc_ref scene_ref <<< "${line}"
-
+    
     ciop-log "DEBUG" "1:${premaster_slc_ref} 2:${scene_ref}"
-
+    ciop-log "DEBUG" "1:${premaster_slc_ref} 2:${scene_ref} PROCESSING FILES"
     #if it's the first scene we have to download and setup the master as well
     [ "${first}" == "TRUE" ] && {
       ciop-copy -O ${PROCESS} ${premaster_slc_ref}
       fix_res_path "${PROCESS}"
-      first="FALSE"
+      #first="FALSE"
     }
-
+    
     scene=$( get_data ${scene_ref} ${RAW} ) 
     #scene=$( ciop-copy -f -O ${RAW} $( echo ${scene_ref} | tr -d "\t")  )
     [ $? -ne 0 ] && return ${ERR_SCENE}
     fix_res_path "$RAW"
     ciop-log "INFO" "Processing scene: ${scene}"
-
-    # which orbits (defined in application.xml)
-    #orbits="$( get_orbit_flag )"
-    #[ $? -ne 0 ] && return ${ERR_ORBIT_FLAG}
-    #ciop-log "INFO" "Orbit format used: ${orbits}" 
-
-    ciop-log "INFO" "Get sensing date"
+    
+	#ciop-log "INFO" "Get sensing date"
     #sensing_date=$( get_sensing_date ${scene} )
     #[ $? -ne 0 ] && return ${ERR_SENSING_DATE}
-
-    ciop-log "INFO" "Get Sensor"
-    mission=$( get_mission ${scene} | tr "A-Z" "a-z" )
-    [ $? -ne 0 ] && return ${ERR_MISSION}
-    [ ${mission} == "asar" ] && flag="envi"
-    ciop-log "INFO" "Sensor: ${mission}"   
-
-    ciop-log "INFO" "Get Auxilary data"
-    #get_aux ${mission} ${sensing_date} ${orbits}
-    [ $? -ne 0 ] && return ${ERR_AUX}
-
-    # link_raw
-    #ciop-log "INFO" "Set-up Stamps Structure (i.e. run step link_raw)"
-    #link_raw ${RAW} ${PROCESS}
-    #[ $? -ne 0 ] && return ${ERR_LINK_RAW}
+	
+	
     cd ${RAW}
+    #ciop-log "INFO" "Get RAW folder: ${RAW}"
     tar xvzf ${scene}
     #rm -rf ${scene}
-    for f in $(find ./ -name "T*.xml"); do
+	for f in $(find ./ -name "T*.xml"); do
         echo info: $f
         bname=$( basename ${f} )
         sensing_date=$(echo $bname | awk -F '_' {'print substr($13,1,8)'} )
+		new_name_temp=$(echo $bname | awk {'print substr($bname,1,59)'} )
+	    ciop-log "INFO" "Name of file: ${new_name_temp}"
+		#add the "tar.gz" to the file
+		new_name="${new_name_temp}.tar.gz"
+		mv ${new_name_temp} ${new_name}
+		ciop-log "INFO" "Name of file: ${new_name}"
     done
     ciop-log "INFO" "Sensing date: ${sensing_date}"
 
+	
     ciop-log "INFO" "Running link_slcs"
     cd ${PROCESS}
     link_slcs ${RAW}
-
+    #sensing_date=${list[${counter_xml_1}]}
+	ciop-log "INFO" "Processing input: ${sensing_date}"
     ciop-log "INFO" "Preparing step_read_geo"   
     scene_folder=${SLC}/${sensing_date}
+    ciop-log "INFO" "Scene folder... ${scene_folder}"
     premaster_date=`basename ${PROCESS}/I* | cut -c 7-14`
+    ciop-log "INFO" "Premaster_date ${premaster_date}"
     [ ! -d "${PROCESS}/INSAR_${premaster_date}" ] && ciop-log "DEBUG" "${PROCESS}/INSAR_${premaster_date} does not exist" || ciop-log "DEBUG" "${PROCESS}/INSAR_${premaster_date} exists"
     if [ ! -d "${PROCESS}/INSAR_${premaster_date}" ]
     then
       ciop-copy -O ${PROCESS} ${premaster_slc_ref}
       [ $? -ne 0 ] && return ${ERR_MASTER}
       fix_res_path "${PROCESS}"
-
+    
       premaster_date=`basename ${PROCESS}/I* | cut -c 7-14`
       [ $? -ne 0 ] && return ${ERR_SENSING_DATE_MASTER}
       ciop-log "INFO" "Pre-Master Date: ${premaster_date}"
@@ -166,71 +161,64 @@ main() {
     ciop-log "INFO" "Run ${slc_bin} for ${sensing_date}"
     ${slc_bin}
     [ $? -ne 0 ] && return ${ERR_SLC}
-
+    
     # writing original image url for node master_select (need for newly master)
     echo ${scene_ref} > ${sensing_date}.url  
-
+    ciop-log "INFO" "Sensing Date URL: ${sensing_date}.url"
     # publish for next node
     cd ${SLC}
     ciop-log "INFO" "create tar"
     tar cvfz ${sensing_date}.tgz ${sensing_date}
     [ $? -ne 0 ] && return ${ERR_SLC_TAR}
-
+    
     ciop-log "INFO" "Publishing -a"
-    slc_folders="$( ciop-publish -a ${SLC}/${sensing_date}.tgz )"
+    slc_folders="$( ciop-publish -a ${SLC}/${sensing_date})"
     [ $? -ne 0 ] && return ${ERR_SLC_PUBLISH}
-
-    premaster_date=`basename ${PROCESS}/I* | cut -c 7-14`
-    [ ! -d "${PROCESS}/INSAR_${premaster_date}" ] && ciop-log "DEBUG" "${PROCESS}/INSAR_${premaster_date} does not exist" || ciop-log "DEBUG" "${PROCESS}/INSAR_${premaster_date} exists"
-    if [ ! -d "${PROCESS}/INSAR_${premaster_date}" ]
-    then
-      ciop-copy -O ${PROCESS} ${premaster_slc_ref}
-      [ $? -ne 0 ] && return ${ERR_MASTER}
-      fix_res_path "${PROCESS}"
-
-      premaster_date=`basename ${PROCESS}/I* | cut -c 7-14`
-      [ $? -ne 0 ] && return ${ERR_SENSING_DATE_MASTER}
-      ciop-log "INFO" "Pre-Master Date: ${premaster_date}"
-    fi
-
+	#
     ciop-log "INFO" "Sensing date before if: $sensing_date vs ${premaster_date}"
-  
+    
     if [ "${sensing_date}" != "${premaster_date}" ]
+    
     then
       cd ${PROCESS}/INSAR_${premaster_date}
       mkdir ${sensing_date}
       cd ${sensing_date}
-
-      # step_orbit (extract orbits)
-    #  ln -s ${SLC}/${sensing_date} SLC
-    #  ciop-log "INFO" "step_orbit for ${sensing_date} "
-    #  step_orbit
-    #  [ $? -ne 0 ] && return ${ERR_STEP_ORBIT}
+     # mkdir SLC/
+      cp  ${PROCESS}/INSAR_${premaster_date}/master.res ${PROCESS}/INSAR_${premaster_date}/${sensing_date}/master.res
+      
+      cp  ${PROCESS}/SLC/${sensing_date}/slave.res ${PROCESS}/INSAR_${premaster_date}/${sensing_date}/slave.res
+      cp  ${PROCESS}/SLC/${sensing_date}/slave.res ${PROCESS}/INSAR_${premaster_date}/slave.res
+    
       ciop-log "INFO" "doing image coarse correlation for ${sensing_date}"
       step_coarse
       [ $? -ne 0 ] && return ${ERR_STEP_COARSE}
-
+    
       cd ../
-
+    
       ciop-log "INFO" "create tar"
       tar cvfz INSAR_${sensing_date}.tgz ${sensing_date}
       [ $? -ne 0 ] && return ${ERR_INSAR_TAR}
-
+    
       ciop-log "INFO" "Publish -a insar_slaves"
+      #rm -rf ${PROCESS}/INSAR_${premaster_date}/${sensing_date}/slave.res
+      #change the below line from INSAR_${sensing_date}.tgz to  INSAR_${premaster_date}.tgz
       insar_slaves="$( ciop-publish -a ${PROCESS}/INSAR_${premaster_date}/INSAR_${sensing_date}.tgz )"
+      ciop-log "INFO" "Publish $insar_slaves"
+      
     else
       insar_slaves=""
     fi 
-
+    raw_data="$( ciop-publish -a ${RAW})"
     ciop-log "INFO" "Publish -s"
-    echo "${premaster_slc_ref},${slc_folders},${insar_slaves}" | ciop-publish -s
-
-    rm -rf ${RAW}
+    echo "${premaster_slc_ref},${slc_folders},${insar_slaves},${raw_data}" | ciop-publish -s
+	#rm -rf ${scene}
+    #counter_xml_1=$((${counter_xml_1}+1))
     cd -
   done
-
-  ciop-log "INFO" "removing temporary files $TMPDIR"
-  rm -rf ${TMPDIR}
+  
+  ciop-log "INFO" "removing RAW folder"
+  #cp ${TMPDIR}/* /tmp/Andreas/
+  #rm -rf ${TMPDIR}
 }
 
 cat | main
