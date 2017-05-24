@@ -129,7 +129,8 @@ main() {
   ciop-log "INFO" "running mt_prep to load data into matlab variables"
   cd ${PROCESS}/INSAR_${master_date}/
   INSARDIR="${PROCESS}/INSAR_${master_date}"
-
+  ciop-log "INFO" "cOPY slave_crop.slc from ${PROCESS}/INSAR_${master_date}/${sensing_date}"
+  cp ${PROCESS}/INSAR_${master_date}/${sensing_date}/slave_crop.slc ${PROCESS}/INSAR_${master_date}/${sensing_date}_crop.slc 
   # taken from mt_extract_info and rewritten (since mt_extract_info won't find dem.dorisin)
   echo ${TMPDIR}/DEM/final_dem.dem > $INSARDIR/demparms.in 
   grep SAM_IN_SIZE $INSARDIR/timing.dorisin | gawk '{if ($1=="SAM_IN_SIZE") print $3}' >> $INSARDIR/demparms.in 
