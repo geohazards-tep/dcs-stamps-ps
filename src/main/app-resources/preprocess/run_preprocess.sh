@@ -81,9 +81,9 @@ main() {
   export SLC=${PROCESS}/SLC
   export VOR_DIR=${TMPDIR}/VOR
   export INS_DIR=${TMPDIR}/INS  
-  scene=$( get_data ${scene_ref} ${RAW} ) 
   ciop-log "INFO" "creating the directory structure in $TMPDIR"
-  
+      premaster_cat="$( ciop-getparam master )"
+      [ $? -ne 0 ] && return ${ERR_MASTER_REF}
   # download data into $RAW
   #counter_xml_1=0
   while read line
@@ -117,17 +117,15 @@ main() {
     #ciop-log "INFO" "Get RAW folder: ${RAW}"
     tar xvzf ${scene}
     #rm -rf ${scene}
-	for f in $(find ./ -name "T*.xml"); do
-        echo info: $f
-        bname=$( basename ${f} )
-        sensing_date=$(echo $bname | awk -F '_' {'print substr($13,1,8)'} )
-		new_name_temp=$(echo $bname | awk {'print substr($bname,1,59)'} )
-	    ciop-log "INFO" "Name of file: ${new_name_temp}"
-		#add the "tar.gz" to the file
-		new_name="${new_name_temp}.tar.gz"
-		mv ${new_name_temp} ${new_name}
-		ciop-log "INFO" "Name of file: ${new_name}"
-    done
+
+    bname=$( basename ${scene} )
+    sensing_date=$(echo $bname | awk -F '_' {'print substr($13,1,8)'} )
+	new_name_temp=$(echo $bname | awk {'print substr($bname,1,59)'} )
+	ciop-log "INFO" "Name of file: ${new_name_temp}"
+	#add the "tar.gz" to the file
+	new_name="${new_name_temp}.tar.gz"
+	cp ${new_name_temp} ${new_name}
+	ciop-log "INFO" "Name of file: ${new_name}"
     ciop-log "INFO" "Sensing date: ${sensing_date}"
 
 	
@@ -164,7 +162,10 @@ main() {
     
     # writing original image url for node master_select (need for newly master)
     echo ${scene_ref} > ${sensing_date}.url  
+	cd ${PROCESS}/INSAR_${premaster_date}/
+	echo ${premaster_cat} > ${premaster_date}.url  
     ciop-log "INFO" "Sensing Date URL: ${sensing_date}.url"
+	ciop-log "INFO" "Master Date URL: ${premaster_date}.url"
     # publish for next node
     cd ${SLC}
     ciop-log "INFO" "create tar"
@@ -208,16 +209,16 @@ main() {
     else
       insar_slaves=""
     fi 
-    raw_data="$( ciop-publish -a ${RAW})"
+    raw_data="$( ciop-publish -a ${RAW}/${new_name_temp})"
     ciop-log "INFO" "Publish -s"
     echo "${premaster_slc_ref},${slc_folders},${insar_slaves},${raw_data}" | ciop-publish -s
+	rm -rf ${RAW}/*
 	#rm -rf ${scene}
     #counter_xml_1=$((${counter_xml_1}+1))
     cd -
   done
   
   ciop-log "INFO" "removing RAW folder"
-  #cp ${TMPDIR}/* /tmp/Andreas/
   #rm -rf ${TMPDIR}
 }
 

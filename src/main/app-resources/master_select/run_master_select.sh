@@ -143,17 +143,18 @@ main() {
 	
     IFS=',' read -r premaster_slc_ref slc_folders insar_slaves raw_data<<< "${line}"
     ciop-log "DEBUG" "1:${premaster_slc_ref} 2:${slc_folders} 3:${insar_slaves} 4:${raw_data}"	
-	
-	if [ "${FIRST}" == "TRUE" ];
-	then
+
      ciop-log "INFO" "Retrieving raw data ${raw_data}"
      [ $? -ne 0 ] && return ${ERR_raw}
-	 ciop-copy -f -O ${RAW} ${raw_data}
-	 mv ${RAW}/RAW/RAW/* ${RAW}/
-	 rm -rf ${RAW}/RAW/
-	 ${FIRST}="FALSE"
-	fi
-	
+	 ciop-copy -f -O ${RAW}/ ${raw_data}
+	 bname=$( basename ${raw_data} )
+	 new_name="${bname}.tar.gz"
+	 mv ${bname} ${new_name}
+	 ciop-log "INFO" "Un tar raw data ${new_name}"
+    tar xvzf ${new_name}
+	rm ${new_name}
+    ciop-log "INFO" "Retrieving slc data ${slc_folders}"
+	ciop-copy -f -O ${PROCESS}/SLC/ ${slc_folders}
 
     if [ ! -d ${PROCESS}/INSAR_${premaster_date} ]
     then
@@ -191,7 +192,6 @@ main() {
   cd ${PROCESS}
   link_slcs ${RAW}
   mkdir ${PROCESS}/INSAR_${master_date}/
-  
   cd ${PROCESS}/INSAR_${master_date}/
   cp ${PROCESS}/SLC/${master_date}/* ${PROCESS}/INSAR_${master_date}
   rm -rf INSAR_${premaster_date}
@@ -254,8 +254,9 @@ main() {
   cd ${PROCESS}/INSAR_${master_date}/
   # DEM steps
   # getting the original file url for dem fucntion
+  cp ${TMPDIR}/PROCESS/SLC/${sensing_temp_date}/${master_date}.url ${PROCESS}/INSAR_${master_date}/${master_date}.url
   master_ref=`cat $master_date.url`
-  ciop-log "INFO" "Prepare DEM with: $master_ref"    
+  ciop-log "INFO" "Prepare DEM with: $master_ref"  
   dem ${master_ref} ${TMPDIR}/DEM
   [ $? -ne 0 ] && return ${ERR_DEM}
 
@@ -306,7 +307,6 @@ main() {
   ciop-log "INFO" "removing temporary files $TMPDIR"
   #rm -rf ${TMPDIR}
 }
-
 cat | main
 exit $?
 
