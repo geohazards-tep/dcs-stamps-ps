@@ -243,6 +243,7 @@ main() {
    if [ "${sensing_temp_date}" != "${master_date}" ]
    then
 	cp -r ${PROCESS}/SLC/${sensing_temp_date} ${PROCESS}/INSAR_${master_date}/
+	cp ${TMPDIR}/PROCESS/SLC/${sensing_temp_date}/${master_date}.url ${PROCESS}/INSAR_${master_date}/${master_date}.url
     ciop-log "INFO" "Running step_read_geo"
 	cd ${PROCESS}/INSAR_${master_date}/${sensing_temp_date}
 	step_read_geo
@@ -253,8 +254,8 @@ main() {
   done
   cd ${PROCESS}/INSAR_${master_date}/
   # DEM steps
+  tsx_extract_heading
   # getting the original file url for dem fucntion
-  cp ${TMPDIR}/PROCESS/SLC/${sensing_temp_date}/${master_date}.url ${PROCESS}/INSAR_${master_date}/${master_date}.url
   master_ref=`cat $master_date.url`
   ciop-log "INFO" "Prepare DEM with: $master_ref"  
   dem ${master_ref} ${TMPDIR}/DEM
@@ -264,6 +265,8 @@ main() {
   cat ${TMPDIR}/DEM/input.doris_dem >> ${PROCESS}/INSAR_${master_date}/timing.dorisin  
   tail -n 13 ${STAMPS}/DORIS_SCR/timing.dorisin >> ${PROCESS}/INSAR_${master_date}/timing.dorisin  
 
+  
+  
   cd ${PROCESS}/INSAR_${master_date}/
   ciop-log "INFO" "Running step_master_timing"    
   step_master_timing

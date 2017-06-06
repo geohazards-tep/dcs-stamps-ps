@@ -130,7 +130,7 @@ main() {
   cd ${PROCESS}/INSAR_${master_date}/
   INSARDIR="${PROCESS}/INSAR_${master_date}"
   ciop-log "INFO" "cOPY slave_crop.slc from ${PROCESS}/INSAR_${master_date}/${sensing_date}"
-  cp ${PROCESS}/INSAR_${master_date}/${sensing_date}/slave_crop.slc ${PROCESS}/INSAR_${master_date}/${sensing_date}_crop.slc 
+  cp ${PROCESS}/INSAR_${master_date}/INSAR_${master_date}_crop.slc ${PROCESS}/INSAR_${master_date}/${master_date}_crop.slc 
   # taken from mt_extract_info and rewritten (since mt_extract_info won't find dem.dorisin)
   echo ${TMPDIR}/DEM/final_dem.dem > $INSARDIR/demparms.in 
   grep SAM_IN_SIZE $INSARDIR/timing.dorisin | gawk '{if ($1=="SAM_IN_SIZE") print $3}' >> $INSARDIR/demparms.in 
@@ -141,7 +141,7 @@ main() {
   grep SAM_IN_FORMAT $INSARDIR/timing.dorisin | gawk '{if ($1=="SAM_IN_FORMAT") print $2}' >> $INSARDIR/demparms.in 
 
   #mt_prep 0.42 1 2 50 200
-  mt_prep 0.42 5 4 50 200
+  mt_prep 0.60 4 5 50 200
   [ $? -ne 0 ] && return ${ERR_MT_PREP}
 
   # Check for size of pscands.1.da to see if enough PS are contained
@@ -211,7 +211,7 @@ main() {
   ciop-publish -m "${dem}"
 
   ciop-log "INFO" "removing temporary files $TMPDIR"
-  rm -rf ${TMPDIR}
+  #rm -rf ${TMPDIR}
  
   return ${SUCCESS}
 

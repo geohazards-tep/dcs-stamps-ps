@@ -164,6 +164,7 @@ main() {
     echo ${scene_ref} > ${sensing_date}.url  
 	cd ${PROCESS}/INSAR_${premaster_date}/
 	echo ${premaster_cat} > ${premaster_date}.url  
+	cp ${premaster_date}.url ${scene_folder}/
     ciop-log "INFO" "Sensing Date URL: ${sensing_date}.url"
 	ciop-log "INFO" "Master Date URL: ${premaster_date}.url"
     # publish for next node

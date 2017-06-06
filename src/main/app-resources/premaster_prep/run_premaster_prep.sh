@@ -159,7 +159,7 @@ set -x
 	  echo "${premaster_slc_ref},${scene_ref}" | ciop-publish -s
   done
      ciop-log "INFO" "removing temporary files $TMPDIR"
-     rm -rf ${TMPDIR}
+     #rm -rf ${TMPDIR}
  
 }
 cat | main
