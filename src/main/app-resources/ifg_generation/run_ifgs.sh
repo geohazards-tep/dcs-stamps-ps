@@ -6,7 +6,8 @@ mode=$1
 
 # source extra functions
 source ${_CIOP_APPLICATION_PATH}/lib/stamps-helpers.sh
-
+export PATH=/opt/anaconda/bin:$PATH
+export PATH=/home/_andreas_noa/doris4-0-4/bin:$PATH
 # source StaMPS
 source /opt/StaMPS_v3.3b1/StaMPS_CONFIG.bash
 
@@ -142,10 +143,11 @@ main() {
       #   adjust paths for current node    
       #sed -i "s|Data_output_file:.*|Data_output_file:  ${PROCESS}/INSAR_${master_date}/${sensing_date}.slc|" slave.res
       #sed -i "s|SLAVE RESULTFILE:.*|SLAVE RESULTFILE:\t $SLC/${sensing_date}/slave.res|" slave.res              
-      ciop-log "INFO" "cOPY from ${PROCESS}/SLC/${sensing_date}/*"
-	  cp ${PROCESS}/INSAR_${master_date}/${sensing_date}/slave_crop.slc ${PROCESS}/INSAR_${master_date}/${sensing_date}/${sensing_date}.slc 
+#      ciop-log "INFO" "cOPY from ${PROCESS}/SLC/${sensing_date}/*"
+      ciop-log "INFO" "cOPY from INSAR_${master_date}/${sensing_date}/   -  TO  -  ${PROCESS}/INSAR_${master_date}/${sensing_date}/${sensing_date}.slc"
+      cp ${PROCESS}/INSAR_${master_date}/${sensing_date}/slave_crop.slc ${PROCESS}/INSAR_${master_date}/${sensing_date}/${sensing_date}.slc 
       cp  ${PROCESS}/INSAR_${master_date}/master.res ${PROCESS}/INSAR_${master_date}/${sensing_date}/master.res
-	  cp  ${PROCESS}/INSAR_${master_date}/master.res ${PROCESS}/SLC/${sensing_date}/master.res
+      cp  ${PROCESS}/INSAR_${master_date}/master.res ${PROCESS}/SLC/${sensing_date}/master.res
 	  # copy Stamps version of coarse.dorisin into slave folder
       cp $DORIS_SCR/coarse.dorisin .
       #rm -f coreg.out

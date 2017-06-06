@@ -6,7 +6,8 @@ mode=$1
 
 # source extra functions
 source ${_CIOP_APPLICATION_PATH}/lib/stamps-helpers.sh
-
+export PATH=/opt/anaconda/bin:$PATH
+export PATH=/home/_andreas_noa/doris4-0-4/bin:$PATH
 # source StaMPS
 source /opt/StaMPS_v3.3b1/StaMPS_CONFIG.bash
 
@@ -77,7 +78,6 @@ dem() {
   local target=$2
   local bbox
   local wkt
- 
   #wkt="$( ciop-casmeta -f "dct:spatial" "${dataset_ref}" )"
   wkt="$( opensearch-client "${dataset_ref}" wkt | head -1 )"
   ciop-log "INFO" "Printing ${wkt}"
@@ -129,7 +129,10 @@ main() {
   #add the "tar.gz" to the file
   new_name="${new_name_temp}.tar.gz"
   mv ${new_name_temp} ${new_name}
-  tar xvzf $new_name
+  mkdir ${new_name_temp}
+  cd ${new_name_temp}
+  tar xvzf ${RAW}/${new_name}
+  ciop-log "INFO" "Name of file: ${new_name}" 
   FIRST="TRUE"
   ciop-log "INFO" "Processing input: ${line}"
   while read line
@@ -143,17 +146,23 @@ main() {
 	
     IFS=',' read -r premaster_slc_ref slc_folders insar_slaves raw_data<<< "${line}"
     ciop-log "DEBUG" "1:${premaster_slc_ref} 2:${slc_folders} 3:${insar_slaves} 4:${raw_data}"	
-	
-	if [ "${FIRST}" == "TRUE" ];
-	then
+
      ciop-log "INFO" "Retrieving raw data ${raw_data}"
      [ $? -ne 0 ] && return ${ERR_raw}
-	 ciop-copy -f -O ${RAW} ${raw_data}
-	 mv ${RAW}/RAW/RAW/* ${RAW}/
-	 rm -rf ${RAW}/RAW/
-	 ${FIRST}="FALSE"
-	fi
-	
+	 ciop-copy -f -O ${RAW}/ ${raw_data}
+	 bname=$( basename ${raw_data} )
+	 new_name_temp=$(echo $bname | awk {'print substr($bname,1,59)'} )
+     ciop-log "INFO" "Name of file: ${new_name_temp}"
+     #add the "tar.gz" to the file
+	 new_name="${new_name_temp}.tar.gz"
+	 mv ${bname} ${new_name}
+	 mkdir ${new_name_temp}
+     cd ${new_name_temp}
+     tar xvzf ${RAW}/$new_name
+	 ciop-log "INFO" "Un tar raw data ${new_name}"
+	 rm ${RAW}/$new_name
+     ciop-log "INFO" "Retrieving slc data ${slc_folders}"
+	 ciop-copy -f -O ${PROCESS}/SLC/ ${slc_folders}
 
     if [ ! -d ${PROCESS}/INSAR_${premaster_date} ]
     then
@@ -191,7 +200,6 @@ main() {
   cd ${PROCESS}
   link_slcs ${RAW}
   mkdir ${PROCESS}/INSAR_${master_date}/
-  
   cd ${PROCESS}/INSAR_${master_date}/
   cp ${PROCESS}/SLC/${master_date}/* ${PROCESS}/INSAR_${master_date}
   rm -rf INSAR_${premaster_date}
@@ -202,7 +210,7 @@ main() {
   #MAS_WIDTH=`grep WIDTH ${master_date}.slc.rsc | awk '{print $2}' `
   #MAS_LENGTH=`grep FILE_LENGTH ${master_date}.slc.rsc | awk '{print $2}' `
   
-  read_bin="step_read_whole_TSX"
+  read_bin="step_read_whole_CSK"
   ciop-log "INFO" "Run ${read_bin} for ${sensing_date}"
   #ln -s ${PROCESS}/INSAR_${master_date}  
   ${read_bin}
@@ -233,10 +241,10 @@ main() {
   rm -rf ${TMPDIR}/INSAR_INSAR_${master_date}
   cd ${RAW}
   counter_xml_1=0
-  for f in $(find ./ -name "T*.xml"); do
+  for f in $(find ./ -name "C*.h5"); do
    bname=$( basename ${f} )
    ciop-log "INFO" "filenames: $( basename ${f} )"
-   sensing_temp_date=$(echo $bname | awk -F '_' {'print substr($13,1,8)'} )
+   sensing_temp_date=$(echo $bname | awk {'print substr($bname,28,8)'} )
    list_files[counter_xml]=${sensing_temp_date}
    ciop-log "INFO" "Name of slave image ${sensing_temp_date}"
    ciop-log "INFO" "Name of master image ${master_date}"
@@ -255,7 +263,7 @@ main() {
   # DEM steps
   # getting the original file url for dem fucntion
   master_ref=`cat $master_date.url`
-  ciop-log "INFO" "Prepare DEM with: $master_ref"    
+  ciop-log "INFO" "Prepare DEM with: $master_ref"  
   dem ${master_ref} ${TMPDIR}/DEM
   [ $? -ne 0 ] && return ${ERR_DEM}
 
@@ -304,9 +312,8 @@ main() {
   echo "${insar_master},${slc_folders},${dem}" | ciop-publish -s 
   ciop-log "INFO" "Will publish the final output ${insar_master},${slc_folders},${dem}"
   ciop-log "INFO" "removing temporary files $TMPDIR"
-  rm -rf ${TMPDIR}
+  #rm -rf ${TMPDIR}
 }
-
 cat | main
 exit $?
 

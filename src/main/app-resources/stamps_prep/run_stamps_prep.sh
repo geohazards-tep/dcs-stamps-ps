@@ -7,7 +7,8 @@ mode=$1
 
 # source extra functions
 source ${_CIOP_APPLICATION_PATH}/lib/stamps-helpers.sh
-
+export PATH=/opt/anaconda/bin:$PATH
+export PATH=/home/_andreas_noa/doris4-0-4/bin:$PATH
 # source StaMPS
 source /opt/StaMPS_v3.3b1/StaMPS_CONFIG.bash
 
@@ -129,7 +130,7 @@ main() {
   ciop-log "INFO" "running mt_prep to load data into matlab variables"
   cd ${PROCESS}/INSAR_${master_date}/
   INSARDIR="${PROCESS}/INSAR_${master_date}"
-
+  cp ${PROCESS}/INSAR_${master_date}/INSAR_${master_date}_crop.slc ${PROCESS}/INSAR_${master_date}/${master_date}_crop.slc 
   # taken from mt_extract_info and rewritten (since mt_extract_info won't find dem.dorisin)
   echo ${TMPDIR}/DEM/final_dem.dem > $INSARDIR/demparms.in 
   grep SAM_IN_SIZE $INSARDIR/timing.dorisin | gawk '{if ($1=="SAM_IN_SIZE") print $3}' >> $INSARDIR/demparms.in 
@@ -140,7 +141,7 @@ main() {
   grep SAM_IN_FORMAT $INSARDIR/timing.dorisin | gawk '{if ($1=="SAM_IN_FORMAT") print $2}' >> $INSARDIR/demparms.in 
 
   #mt_prep 0.42 1 2 50 200
-  mt_prep 0.42 5 4 50 200
+  mt_prep 0.42 3 3 50 200
   [ $? -ne 0 ] && return ${ERR_MT_PREP}
 
   # Check for size of pscands.1.da to see if enough PS are contained
@@ -163,7 +164,7 @@ main() {
   [ $? -ne 0 ] && return ${ERR_STAMPS_1}
 
   ciop-log "INFO" "Set Density Rand to 5"
-  /opt/StaMPS_v3.3b1/matlab/run_setparm.sh $MCR density_rand 5
+  /opt/StaMPS_v3.3b1/matlab/run_setparm.sh $MCR density_rand 20
   [ $? -ne 0 ] && return ${ERR_DENS_PARM}
 
   ciop-log "INFO" "Set Weed_zero_elevation to yes"

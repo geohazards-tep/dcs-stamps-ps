@@ -62,7 +62,8 @@ get_aux() {
   local orbit_flag=$3
   
   [ ${orbit_flag} == "VOR" ] && {
-    local aux_cat="http://catalogue.terradue.int/catalogue/search/DOR_VOR_AX"
+    #local aux_cat="http://catalogue.terradue.int/catalogue/search/DOR_VOR_AX"
+    local aux_cat="https://catalog.terradue.com/envisat/series/dor_vor_ax/search/"
     start="$( date -d "${sensing_date} 3 days ago" +%Y-%m-%dT00:00:00 )"
     stop="$( date -d "${sensing_date} 3 days" +%Y-%m-%dT00:00:00 )"
     
@@ -78,7 +79,8 @@ get_aux() {
 
   }
     
-  aux_cat="http://catalogue.terradue.int/catalogue/search/ASA_INS_AX"
+  #aux_cat="http://catalogue.terradue.int/catalogue/search/ASA_INS_AX"
+  aux_cat="https://catalog.terradue.com/envisat/series/asa_ins_ax/search/"
     
   opensearch-client -p "time:start=${start}" \
     -p "time:end=${stop}" \
