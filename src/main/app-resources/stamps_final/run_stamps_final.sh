@@ -7,7 +7,8 @@ mode=$1
 
 # source extra functions
 source ${_CIOP_APPLICATION_PATH}/lib/stamps-helpers.sh
-
+export PATH=/opt/anaconda/bin:$PATH
+export PATH=/home/gep-noa/doris4.04/bin:$PATH
 # source StaMPS
 source /opt/StaMPS_v3.3b1/StaMPS_CONFIG.bash
 

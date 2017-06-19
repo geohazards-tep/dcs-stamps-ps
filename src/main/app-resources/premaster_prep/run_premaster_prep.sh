@@ -7,7 +7,7 @@ export MANPATH=/opt/libxml2/share/man/:$MANPATH
 
 export PATH=/opt/libxml2/bin/:$PATH
 export PATH=/opt/anaconda/bin:$PATH
-export PATH=/home/_andreas_noa/doris4-0-4/bin:$PATH
+export PATH=/home/gep-noa/doris4.04/bin:$PATH
 
 # source the ciop functions (e.g. ciop-log)
 [ "${mode}" != "test" ] && source ${ciop_job_include}
@@ -158,7 +158,7 @@ set -x
 	  echo "${premaster_slc_ref},${scene_ref}" | ciop-publish -s
   done
      ciop-log "INFO" "removing temporary files $TMPDIR"
-     #rm -rf ${TMPDIR}
+     rm -rf ${TMPDIR}
  
 }
 cat | main

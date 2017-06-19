@@ -8,7 +8,7 @@ mode=$1
 # source extra functions
 source ${_CIOP_APPLICATION_PATH}/lib/stamps-helpers.sh
 export PATH=/opt/anaconda/bin:$PATH
-export PATH=/home/_andreas_noa/doris4-0-4/bin:$PATH
+export PATH=/home/gep-noa/doris4.04/bin:$PATH
 # source StaMPS
 source /opt/StaMPS_v3.3b1/StaMPS_CONFIG.bash
 
@@ -141,7 +141,7 @@ main() {
   grep SAM_IN_FORMAT $INSARDIR/timing.dorisin | gawk '{if ($1=="SAM_IN_FORMAT") print $2}' >> $INSARDIR/demparms.in 
 
   #mt_prep 0.42 1 2 50 200
-  mt_prep 0.42 3 3 50 200
+  mt_prep 0.40 3 3 50 200
   [ $? -ne 0 ] && return ${ERR_MT_PREP}
 
   # Check for size of pscands.1.da to see if enough PS are contained

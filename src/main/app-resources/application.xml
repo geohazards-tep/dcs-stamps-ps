@@ -16,6 +16,7 @@
     <jobTemplate id="preprocess">
       <streamingExecutable>/application/preprocess/run_preprocess.sh</streamingExecutable>
  	<defaultParameters>
+	  <parameter id="master" title="Candidate master product reference" abstract="Define the canditate master product reference" scope="runtime">https://catalog.terradue.com//noa-cosmoskymed/search?uid=CSKS1_SCS_B_HI_09_HH_RA_SF_20150814040407_20150814040415</parameter>
 	  <parameter id="orbit" title="Orbits files: for Envisat DOR or VOR, ERS ODR" abstract="Type of orbits files for focussing step with ROI_PAC" scope="runtime">VOR</parameter>
 	</defaultParameters>
         <defaultJobconf>
@@ -67,7 +68,7 @@
         </defaultJobconf>
   </jobTemplate>
   </jobTemplates>
-  <workflow id="dcs-stamps-ps" title="StaMPS Permanent Scatterer" abstract="StaMPS (Stanford Method for Persistent Scatterers) is a software package that implements an InSAR persistent scatterer (PS) method developed to work even in terrains devoid of man-made structures and/or undergoing non-steady deformation. This processing service is the StaMPS Permanent Scatterer (PS).">
+  <workflow id="dcs-stamps-ps" title="StaMPS Permanent Scatterer CSK processing" abstract="StaMPS (Stanford Method for Persistent Scatterers) is a software package that implements an InSAR persistent scatterer (PS) method developed to work even in terrains devoid of man-made structures and/or undergoing non-steady deformation. This processing service is the StaMPS Permanent Scatterer (PS).">
     <workflowVersion>1.0</workflowVersion>
      <node id="node_premaster_prep">
       <job id="premaster_prep" />

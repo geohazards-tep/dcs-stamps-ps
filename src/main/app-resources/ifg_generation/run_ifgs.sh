@@ -7,7 +7,7 @@ mode=$1
 # source extra functions
 source ${_CIOP_APPLICATION_PATH}/lib/stamps-helpers.sh
 export PATH=/opt/anaconda/bin:$PATH
-export PATH=/home/_andreas_noa/doris4-0-4/bin:$PATH
+export PATH=/home/gep-noa/doris4.04/bin:$PATH
 # source StaMPS
 source /opt/StaMPS_v3.3b1/StaMPS_CONFIG.bash
 
@@ -117,9 +117,9 @@ main() {
 	  cp ${PROCESS}/INSAR_${master_date}/master_sam.raw ${PROCESS}/INSAR_${master_date}/${sensing_date}/
       # go to master folder
       cd ${PROCESS}/INSAR_${master_date}
-	  cp ${PROCESS}/SLC/${sensing_date}/* ${PROCESS}/INSAR_${master_date}/${sensing_date}/
-	  cp ${PROCESS}/SLC/${sensing_date}/* ${PROCESS}/INSAR_${master_date}/${sensing_date}
-	  cp ${PROCESS}/INSAR_${master_date}/${sensing_date}/* ${PROCESS}/SLC/${sensing_date}
+	  #cp ${PROCESS}/SLC/${sensing_date}/* ${PROCESS}/INSAR_${master_date}/${sensing_date}/
+	  #cp ${PROCESS}/SLC/${sensing_date}/* ${PROCESS}/INSAR_${master_date}/${sensing_date}
+	  
 	  ciop-log "INFO" "cOPY from ${PROCESS}/SLC/${sensing_date}/*"
 	  ciop-log "INFO" "cOPY TO ${PROCESS}/INSAR_${master_date}/${sensing_date}"
       ## adjust the original file paths for the current node         
@@ -127,34 +127,25 @@ main() {
       #sed -i "s|DEM source file:.*|DEM source file:\t  ${TMPDIR}/DEM/final_dem.dem|" master.res     
       #sed -i "s|MASTER RESULTFILE:.*|MASTER RESULTFILE:\t${PROCESS}/INSAR_${master_date}/master.res|" master.res
     
+      cp ${PROCESS}/INSAR_${master_date}/${sensing_date}/slave_crop.slc ${SLC}/${sensing_date}/${sensing_date}.slc
+	  cp ${PROCESS}/INSAR_${master_date}/${sensing_date}/slave.res ${SLC}/${sensing_date}/slave.res
       # create slave folder and change to it
-      #rm -rf ${sensing_date}  # in case of same master as premaster
-      #mkdir -p ${sensing_date}
+      rm -rf ${sensing_date}  # in case of same master as premaster
+      mkdir -p ${sensing_date}
       cd ${sensing_date}
    
-      # link to SLC folder
-      #rm -rf SLC
-      #ln -s ${SLC}/${sensing_date} SLC
-
-      # get the master and slave doris result files
-      #cp -f SLC/slave.res  .
-      #cp -f ../master.res .
+	  mv ${SLC}/${sensing_date}/${sensing_date}.slc ${PROCESS}/INSAR_${master_date}/${sensing_date}/${sensing_date}.slc 
+	  mv ${SLC}/${sensing_date}/slave.res ${PROCESS}/INSAR_${master_date}/${sensing_date}/slave.res
+	  cp ${PROCESS}/INSAR_${master_date}/master.res ${PROCESS}/INSAR_${master_date}/${sensing_date}/master.res
+	  cp ${SLC}/${sensing_date}/slave.res ${PROCESS}/INSAR_${master_date}/${sensing_date}/slave.res
 	  
-      #   adjust paths for current node    
-      #sed -i "s|Data_output_file:.*|Data_output_file:  ${PROCESS}/INSAR_${master_date}/${sensing_date}.slc|" slave.res
-      #sed -i "s|SLAVE RESULTFILE:.*|SLAVE RESULTFILE:\t $SLC/${sensing_date}/slave.res|" slave.res              
-#      ciop-log "INFO" "cOPY from ${PROCESS}/SLC/${sensing_date}/*"
-      ciop-log "INFO" "cOPY from INSAR_${master_date}/${sensing_date}/   -  TO  -  ${PROCESS}/INSAR_${master_date}/${sensing_date}/${sensing_date}.slc"
-      cp ${PROCESS}/INSAR_${master_date}/${sensing_date}/slave_crop.slc ${PROCESS}/INSAR_${master_date}/${sensing_date}/${sensing_date}.slc 
-      cp  ${PROCESS}/INSAR_${master_date}/master.res ${PROCESS}/INSAR_${master_date}/${sensing_date}/master.res
-      cp  ${PROCESS}/INSAR_${master_date}/master.res ${PROCESS}/SLC/${sensing_date}/master.res
 	  # copy Stamps version of coarse.dorisin into slave folder
       cp $DORIS_SCR/coarse.dorisin .
-      #rm -f coreg.out
+      rm -f coreg.out
   
       # change number of corr. windows to 500 for more robust processsing (especially for scenes with water)
-      sed -i 's/CC_NWIN.*/CC_NWIN         500/' coarse.dorisin  
-    
+      sed -i 's/CC_NWIN.*/CC_NWIN         500/' coarse.dorisin
+	  
       ciop-log "INFO" "coarse image correlation for ${sensing_date}"
 	  doris coarse.dorisin > step_coarse.log
       [ $? -ne 0 ] && return ${ERR_STEP_COARSE}
@@ -166,8 +157,12 @@ main() {
       # write the lines with the new overall offset into variable   
       replaceL=`echo -e "Coarse_correlation_translation_lines: \t" $offsetL`
       replaceP=`echo -e "Coarse_correlation_translation_pixels: \t" $offsetP`  
-
+	  ciop-log "INFO" "Coarse_correlation_translation_lines: ${offsetL}"
+	  ciop-log "INFO" "Coarse_correlation_translation_pixels: ${offsetP}"
+	  ciop-log "INFO" "lines with the new overall offset ${replaceL}"
+	  ciop-log "INFO" "lines with the new overall offset ${replaceP}"
       # replace full line of overall offset
+	  cp coreg.out coreg_1st.out
       sed -i "s/Coarse_correlation_translation_lines:.*/$replaceL/" coreg.out
       sed -i "s/Coarse_correlation_translation_pixels:.*/$replaceP/" coreg.out
     

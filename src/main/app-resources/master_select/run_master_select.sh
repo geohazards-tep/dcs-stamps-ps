@@ -7,7 +7,7 @@ mode=$1
 # source extra functions
 source ${_CIOP_APPLICATION_PATH}/lib/stamps-helpers.sh
 export PATH=/opt/anaconda/bin:$PATH
-export PATH=/home/_andreas_noa/doris4-0-4/bin:$PATH
+export PATH=/home/gep-noa/doris4.04/bin:$PATH
 # source StaMPS
 source /opt/StaMPS_v3.3b1/StaMPS_CONFIG.bash
 
@@ -202,7 +202,7 @@ main() {
   mkdir ${PROCESS}/INSAR_${master_date}/
   cd ${PROCESS}/INSAR_${master_date}/
   cp ${PROCESS}/SLC/${master_date}/* ${PROCESS}/INSAR_${master_date}
-  rm -rf INSAR_${premaster_date}
+  #rm -rf INSAR_${premaster_date}
   #cp ${PROCESS}/SLC/
   ciop-log "INFO" "Master date folder... ${PROCESS}/INSAR_${master_date}"
   #
