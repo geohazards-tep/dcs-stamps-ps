@@ -119,6 +119,7 @@ main() {
     if [ ! -e "${PROCESS}/INSAR_${master_date}/lat.raw" ]
     then
       cd ${PROCESS}/INSAR_${master_date}/
+	  sed -i "s/master.res/\/INSAR_${master_date}\/master.res/" geocode.dorisin
       ciop-log "INFO" "Georeferencing image stack"
       cd ${sensing_date}
       step_geo 
