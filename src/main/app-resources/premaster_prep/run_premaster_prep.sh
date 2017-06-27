@@ -7,7 +7,7 @@ export PATH=${_CIOP_APPLICATION_PATH}/master_slc/bin:$PATH
 [ "${mode}" != "test" ] && source ${ciop_job_include}
 
 source ${_CIOP_APPLICATION_PATH}/lib/stamps-helpers.sh
-
+export PATH=/home/_andreas_noa/doris4-0-4/bin:$PATH
 # source StaMPS
 source /opt/StaMPS_v3.3b1/StaMPS_CONFIG.bash
 
@@ -83,45 +83,39 @@ main() {
 	  looks_prm="$( ciop-getparam looks )"
 	  [ $? -ne 0 ] && return ${ERR_LOOKS_PRM}
   
-	  ciop-log "INFO" "Retrieving preliminary master"
+	  
       premaster_ref="$( ciop-getparam master )"
       [ $? -ne 0 ] && return ${ERR_MASTER_REF}
-
+      ciop-log "INFO" "Retrieving preliminary master ${premaster_ref}"
+	  
+	  
 	  premaster=$( get_data ${premaster_ref} ${RAW} ) #for final version
       #premaster=$( get_data ${scene_ref} ${RAW} ) #for final version
       [ $? -ne 0 ] && return ${ERR_MASTER_EMPTY}
-  
-      ciop-log "INFO" "Get sensing date"
+      ciop-log "INFO" "Retrieving preliminary master ${premaster}"
+	  
+	  bname=$( basename ${premaster} )
+	  cd ${RAW}
+
+	  ciop-log "INFO" "Retrieving preliminary master ${bname}"
       sensing_date=$( get_sensing_date ${premaster} )
       [ $? -ne 0 ] && return ${ERR_MASTER_SENSING_DATE}
-  
-      mission=$( get_mission ${premaster} | tr "A-Z" "a-z" )
-      [ $? -ne 0 ] && return ${ERR_MISSION_MASTER}
-      [ ${mission} == "asar" ] && flag="envi"
-  
+      ciop-log "INFO" "Get sensing date ${sensing_date}"
+	  
+	  mkdir ${sensing_date}
+	  cd ${sensing_date}
+	  tar xzf ${RAW}/${bname}
+	  
       # TODO manage ERS and ALOS
       # [ ${mission} == "alos" ] && flag="alos"
-      # [ ${mission} == "ers" ] && flag="ers"
+      #${mission} = "ers"
       # [ ${mission} == "ers_envi" ] && flag="ers_envi"
-  
       premaster_folder=${SLC}/${sensing_date}
       mkdir -p ${premaster_folder}
-  
-      get_aux "${mission}" "${sensing_date}" "${orbits}"
-      [ $? -ne 0 ] && return ${ERR_AUX}
-	  
-	  echo ${looks_prm} > ${SLC}/looks.txt
-	  ## echo ${looks_prm} > INSAR_${sensing_date}/looks.txt
-  
       cd ${premaster_folder}
-      slc_bin="step_slc_${flag}$( [ ${orbits} == "VOR" ] && [ ${mission} == "asar" ] && echo "_vor" )"
-      ciop-log "INFO" "Run ${slc_bin} for ${sensing_date}"
-      ln -s ${premaster}   
-      ${slc_bin}
-      [ $? -ne 0 ] && return ${ERR_SLC}
- 
-      ## MAS_WIDTH=`grep WIDTH  ${sensing_date}.slc.rsc | awk '{print $2}' `
-      ## MAS_LENGTH=`grep FILE_LENGTH  ${sensing_date}.slc.rsc | awk '{print $2}' `
+      #get_aux "${mission}" "${sensing_date}" "${orbits}"
+      #[ $? -ne 0 ] && return ${ERR_AUX}
+	  
 	  
 	  MAS_FL="$( ciop-getparam firstline )"
 	  [ $? -ne 0 ] && return ${ERR_CROP_PRM}
@@ -130,7 +124,8 @@ main() {
 	  MAS_FC="$( ciop-getparam firstcol )"
 	  [ $? -ne 0 ] && return ${ERR_CROP_PRM}
 	  MAS_LC="$( ciop-getparam lastcol )"	  
-	  [ $? -ne 0 ] && return ${ERR_CROP_PRM}
+	  [ $? -ne 0 ] && return ${ERR_CROP_PRM}	 
+
 	  
 	  #MAS_FL=12400
 	  #MAS_LL=16950	
@@ -165,23 +160,45 @@ main() {
 	  #echo "mean_pixel_rng=$MPR" >> $roiproc	  	  
       #echo "ymin=$MAS_FL" >> $roiproc
       #echo "ymax=$MAS_LL" >> $roiproc
+
+	  echo "before_z_ext= -17200" > $roiproc
+	  echo "after_z_ext= -5800" >> $roiproc
+	  echo "near_rng_ext= -3650" >> $roiproc
+	  echo "far_rng_ext= -100" >> $roiproc	  	
 	  
-	  echo "before_z_ext= -9000" > $roiproc
-	  echo "after_z_ext= -9000" >> $roiproc
-	  echo "near_rng_ext= +300" >> $roiproc
-	  echo "far_rng_ext= -4500" >> $roiproc	  
-	  	  
-      step_master_setup
-      [ $? -ne 0 ] && return ${ERR_MASTER_SETUP} 
+	  echo ${looks_prm} > ${SLC}/looks.txt
+	  ## echo ${looks_prm} > INSAR_${sensing_date}/looks.txt
+      link_raw ${RAW} ${PROCESS}
+
+      slc_bin="step_slc_ers"
+      ciop-log "INFO" "Run ${slc_bin} for ${sensing_date}"
+      ln -s ${premaster}   
+      ${slc_bin}
+      [ $? -ne 0 ] && return ${ERR_SLC}
+      ## MAS_WIDTH=`grep WIDTH  ${sensing_date}.slc.rsc | awk '{print $2}' `
+      ## MAS_LENGTH=`grep FILE_LENGTH  ${sensing_date}.slc.rsc | awk '{print $2}' `
 	  
+
+
+	  step_master_setup
+      [ $? -ne 0 ] && return ${ERR_MASTER_SETUP}
+	  ciop-log "INFO" "step_master_orbit_ODR for ${sensing_date} "
+	  
+	  #cp ${premaster_folder}/* ${PROCESS}/INSAR_${sensing_date}
 	  #roiproc=${PROCESS%%/}/INSAR_${sensing_date%%/}/roi.proc
-	  
+	  #ciop-log "INFO" "step_orbit for ${sensing_date} "
+      #step_orbit
+	  #cp master.res ${PROCESS}/INSAR_${sensing_date}/
 	  #echo "use1dopp=1" > $roiproc
 	  #echo "mean_pixel_rng=$MPR" >> $roiproc	  	  
       #echo "ymin=$MAS_FL" >> $roiproc
       #echo "ymax=$MAS_LL" >> $roiproc	  
  
-      cd ${PROCESS}
+ 
+      cd ${PROCESS}/INSAR_${sensing_date}
+	  step_master_orbit_ODR
+	  
+	  cd ${PROCESS}
 	  echo ${looks_prm} > INSAR_${sensing_date}/looks.txt
       tar cvfz premaster_${sensing_date}.tgz INSAR_${sensing_date}
       [ $? -ne 0 ] && return ${ERR_SLC_TAR}

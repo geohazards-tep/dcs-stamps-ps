@@ -6,7 +6,7 @@ mode=$1
 
 # source extra functions
 source ${_CIOP_APPLICATION_PATH}/lib/stamps-helpers.sh
-
+export PATH=/home/_andreas_noa/doris4-0-4/bin:$PATH
 # source StaMPS
 source /opt/StaMPS_v3.3b1/StaMPS_CONFIG.bash
 
@@ -153,31 +153,44 @@ main() {
 
   ciop-log "INFO" "Choose SLC from ${master_date} as final master"
   master=`grep ${master_date} ${TMPDIR}/slc_folders.tmp`
+  
+  cp $PROCESS/INSAR_${premaster_date}/${master_date}.url ${PROCESS}/INSAR_${master_date}/${master_date}.url
+  if [ $premaster_date != $master ]
+  then
+   ciop-log "INFO" "Retrieve final master SLC from ${master_date}"
+   ciop-copy -f -O ${SLC}/ ${master}
+   fix_res_path "${SLC}"
 
-  ciop-log "INFO" "Retrieve final master SLC from ${master_date}"
-  ciop-copy -f -O ${SLC}/ ${master}
-  fix_res_path "${SLC}"
-
-  cd ${SLC}/${master_date}
+   cd ${SLC}/${master_date}
 
   # get extents
-  MAS_WIDTH=`grep WIDTH ${master_date}.slc.rsc | awk '{print $2}' `
-  MAS_LENGTH=`grep FILE_LENGTH ${master_date}.slc.rsc | awk '{print $2}' `
+   MAS_WIDTH=`grep WIDTH ${master_date}.slc.rsc | awk '{print $2}' `
+   MAS_LENGTH=`grep FILE_LENGTH ${master_date}.slc.rsc | awk '{print $2}' `
 
-  ciop-log "INFO" "Running step_master_setup"
-  echo "first_l 1" > master_crop.in
-  echo "last_l ${MAS_LENGTH}" >> master_crop.in
-  echo "first_p 1" >> master_crop.in
-  echo "last_p ${MAS_WIDTH}" >> master_crop.in
+   ciop-log "INFO" "Running step_master_setup"
+   echo "first_l 1" > master_crop.in
+   echo "last_l ${MAS_LENGTH}" >> master_crop.in
+   echo "first_p 1" >> master_crop.in
+   echo "last_p ${MAS_WIDTH}" >> master_crop.in
 
 #  echo "first_l 10000" > master_crop.in
 #  echo "last_l 13000" >> master_crop.in
 #  echo "first_p 2000" >> master_crop.in
 #  echo "last_p 4000" >> master_crop.in
 
-  step_master_setup
-  [ $? -ne 0 ] && return ${ERR_MASTER_SETUP} 
-
+   step_master_setup
+   [ $? -ne 0 ] && return ${ERR_MASTER_SETUP} 
+   cd ${PROCESS}/INSAR_${master_date}/
+   step_master_orbit_ODR
+  fi
+  #path_url=$(find . -name ${master_date}.url);
+  for pa in $(find . -name ${master_date}.url); do
+     cp ${pa} ${PROCESS}/INSAR_${master_date}/${master_date}.url
+     break
+  done
+  #path_name=path_url[0]
+  ciop-log "INFO" "Prepare DEM with: ${pa}"  
+  
   # DEM steps
   # getting the original file url for dem fucntion
   master_ref=`cat $master_date.url`
@@ -222,7 +235,7 @@ main() {
   done
 
   ciop-log "INFO" "removing temporary files $TMPDIR"
-  rm -rf ${TMPDIR}
+  #rm -rf ${TMPDIR}
 }
 
 cat | main

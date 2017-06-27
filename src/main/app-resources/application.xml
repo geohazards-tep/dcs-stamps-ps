@@ -4,13 +4,13 @@
 	<jobTemplate id="premaster_prep">
       <streamingExecutable>/application/premaster_prep/run_premaster_prep.sh</streamingExecutable>
  	<defaultParameters>
-            <parameter id="orbit" title="Orbits files: for Envisat DOR or VOR, ERS ODR" abstract="Type of orbits files for focussing step with ROI_PAC" scope="runtime">VOR</parameter>
-			<parameter id="looks" title="Look parameter" abstract="Look parameter (integer)" scope="runtime">1</parameter>
-			<parameter id="firstline" title="First Line parameter" abstract="First Line parameter (integer)" scope="runtime">12400</parameter>
-			<parameter id="lastline" title="Last Line parameter" abstract="Last Line parameter (integer)" scope="runtime">16950</parameter>
-			<parameter id="firstcol" title="First Column parameter" abstract="First Column parameter (integer)" scope="runtime">280</parameter>
-			<parameter id="lastcol" title="Last Column parameter" abstract="Last Column parameter (integer)" scope="runtime">1640</parameter>			
-            <parameter id="master" title="Candidate master product reference" abstract="Define the canditate master product reference" scope="runtime">https://catalog.terradue.com/noa-envisat/search?uid=ASA_IM__0CNPAM20110929_082507_000000163107_00093_50107_2018.N1</parameter>
+            <parameter id="orbit" title="Orbits files: for Envisat DOR or VOR, ERS ODR" abstract="Type of orbits files for focussing step with ROI_PAC" scope="runtime">ODR</parameter>
+			<parameter id="looks" title="Look parameter" abstract="Look parameter (integer)" scope="runtime">4</parameter>
+			<parameter id="firstline" title="First Line parameter" abstract="First Line parameter (integer)" scope="runtime">400</parameter>
+			<parameter id="lastline" title="Last Line parameter" abstract="Last Line parameter (integer)" scope="runtime">4880</parameter>
+			<parameter id="firstcol" title="First Column parameter" abstract="First Column parameter (integer)" scope="runtime">80</parameter>
+			<parameter id="lastcol" title="Last Column parameter" abstract="Last Column parameter (integer)" scope="runtime">1100</parameter>			
+            <parameter id="master" title="Candidate master product reference" abstract="Define the canditate master product reference" scope="runtime">https://catalog.terradue.com/noa-ers/search?uid=SAR_IM__0PXASI19960927_085849_00000017A015_00150_07519_9388.E2</parameter>
       </defaultParameters>
       <defaultJobconf>
       	<property id="ciop.job.max.tasks">1</property>
@@ -20,8 +20,9 @@
     <jobTemplate id="preprocess">
       <streamingExecutable>/application/preprocess/run_preprocess.sh</streamingExecutable>
  	<defaultParameters>
-	  <parameter id="orbit" title="Orbits files: for Envisat DOR or VOR, ERS ODR" abstract="Type of orbits files for focussing step with ROI_PAC" scope="runtime">VOR</parameter>
+	  <parameter id="orbit" title="Orbits files: for Envisat DOR or VOR, ERS ODR" abstract="Type of orbits files for focussing step with ROI_PAC" scope="runtime">ODR</parameter>
 	  <parameter id="looks" title="Look parameter" abstract="Look parameter (integer)" scope="runtime">1</parameter>
+	  <parameter id="master" title="Candidate master product reference" abstract="Define the canditate master product reference" scope="runtime">https://catalog.terradue.com/noa-ers/search?uid=SAR_IM__0PXASI19960927_085849_00000017A015_00150_07519_9388.E2</parameter>
 	</defaultParameters>
         <defaultJobconf>
           <property id="mapred.task.timeout">9900000000</property>
@@ -30,7 +31,8 @@
     <jobTemplate id="master_select">
       <streamingExecutable>/application/master_select/run_master_select.sh</streamingExecutable>
 	<defaultParameters>
-	    <parameter id="orbit" title="Orbits files: for Envisat DOR or VOR, ERS ODR" abstract="Type of orbits files for focussing step with ROI_PAC" scope="runtime">VOR</parameter>
+	    <parameter id="master" title="Candidate master product reference" abstract="Define the canditate master product reference" scope="runtime">https://catalog.terradue.com/noa-ers/search?uid=SAR_IM__0PXASI19960927_085849_00000017A015_00150_07519_9388.E2</parameter>
+	    <parameter id="orbit" title="Orbits files: for Envisat DOR or VOR, ERS ODR" abstract="Type of orbits files for focussing step with ROI_PAC" scope="runtime">ODR</parameter>
 	</defaultParameters>
         <defaultJobconf>
 	<property id="ciop.job.max.tasks">1</property>
@@ -40,7 +42,7 @@
     <jobTemplate id="ifg_gener">
       <streamingExecutable>/application/ifg_generation/run_ifgs.sh</streamingExecutable>
 	<defaultParameters>
-	  <parameter id="orbit" title="Orbits files: for Envisat DOR or VOR, ERS ODR" abstract="Type of orbits files for focussing step with ROI_PAC" scope="runtime">VOR</parameter>
+	  <parameter id="orbit" title="Orbits files: for Envisat DOR or VOR, ERS ODR" abstract="Type of orbits files for focussing step with ROI_PAC" scope="runtime">ODR</parameter>
 	</defaultParameters>
         <defaultJobconf>
         <property id="mapred.task.timeout">9900000000</property>
@@ -49,7 +51,7 @@
    <jobTemplate id="stamps_prep">
       <streamingExecutable>/application/stamps_prep/run_stamps_prep.sh</streamingExecutable>
 	<defaultParameters>
-	  <parameter id="orbit" title="Orbits files: for Envisat DOR or VOR, ERS ODR" abstract="Type of orbits files for focussing step with ROI_PAC" scope="runtime">VOR</parameter>
+	  <parameter id="orbit" title="Orbits files: for Envisat DOR or VOR, ERS ODR" abstract="Type of orbits files for focussing step with ROI_PAC" scope="runtime">ODR</parameter>
 	</defaultParameters>	
 	<defaultJobconf>
 	<property id="ciop.job.max.tasks">1</property>
@@ -75,7 +77,7 @@
      <node id="node_premaster_prep">
       <job id="premaster_prep" />
       <sources>
-         <source scope="runtime" id="slave" title="Slave product references of the SAR stack to process" abstract="Define the slave products reference to use with StaMPS PS" refid="string:list">https://catalog.terradue.com/noa-envisat/search?uid=ASA_IM__0CNPAM20110402_082235_000000163101_00093_47521_1790.N1,https://catalog.terradue.com/noa-envisat/search?uid=ASA_IM__0CNPAM20110502_082305_000000163102_00093_47952_1843.N1,https://catalog.terradue.com/noa-envisat/search?uid=ASA_IM__0CNPDE20110701_082401_000000163104_00093_48814_3497.N1,https://catalog.terradue.com/noa-envisat/search?uid=ASA_IM__0CNPDE20110731_082426_000000163105_00093_49245_3809.N1,https://catalog.terradue.com/noa-envisat/search?uid=ASA_IM__0CNPDE20110830_082449_000000163106_00093_49676_4075.N1,https://catalog.terradue.com/noa-envisat/search?uid=ASA_IM__0CNPDE20111029_082522_000000163108_00093_50538_4626.N1,https://catalog.terradue.com/noa-envisat/search?uid=ASA_IM__0CNPAM20111128_082535_000000163109_00093_50969_2108.N1,https://catalog.terradue.com/noa-envisat/search?uid=ASA_IM__0CNPAM20111228_082544_000000173110_00093_51400_2161.N1,https://catalog.terradue.com/noa-envisat/search?uid=ASA_IM__0CNPDE20120127_082550_000000163111_00093_51831_5601.N1,https://catalog.terradue.com/noa-envisat/search?uid=ASA_IM__0CNPDE20120226_082552_000000163112_00093_52262_5947.N1,https://catalog.terradue.com/noa-envisat/search?uid=ASA_IM__0CNPDE20120327_082600_000000163113_00093_52693_6261.N1</source>
+         <source scope="runtime" id="slave" title="Slave product references of the SAR stack to process" abstract="Define the slave products reference to use with StaMPS PS" refid="string:list">https://catalog.terradue.com/noa-ers/search?uid=SAR_IM__0PXASI19930706_085842_00000017C096_00150_10315_9410.E1,https://catalog.terradue.com/noa-ers/search?uid=SAR_IM__0PXASI19990813_085840_00000017A045_00150_22549_9397.E2,https://catalog.terradue.com/noa-ers/search?uid=SAR_IM__0PXASI19961101_085850_00000017A016_00150_08020_9378.E2,https://catalog.terradue.com/noa-ers/search?uid=SAR_IM__0PXASI19980515_085842_00000017A032_00150_16036_9390.E2,https://catalog.terradue.com/noa-ers/search?uid=SAR_IM__0PXASI19980724_085842_00000017A034_00150_17038_9375.E2,https://catalog.terradue.com/noa-ers/search?uid=SAR_IM__0PXASI19980515_085842_00000017A032_00150_16036_9390.E2,https://catalog.terradue.com/noa-ers/search?uid=SAR_IM__0PXASI19990326_085841_00000017A041_00150_20545_9382.E2,https://catalog.terradue.com/noa-ers/search?uid=SAR_IM__0PXASI19950525_085848_00000017G146_00150_20178_9408.E1</source>
       </sources>
       <parameters/>
     </node>

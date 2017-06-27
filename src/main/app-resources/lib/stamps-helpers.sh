@@ -6,7 +6,7 @@ set_env() {
 #  . ${SAR_HELPERS_HOME}/sar-helpers.sh
 
   # shorter temp path
-  export TMPDIR=/tmp/$( uuidgen )
+  export TMPDIR=/tmp/$1-$( uuidgen )
 
   echo $TMPDIR
 
@@ -20,7 +20,13 @@ set_env() {
   mkdir -p ${PROCESS}
   mkdir -p ${SLC}
   mkdir -p ${TMPDIR}/DEM
+  cp -R /home/_andreas_noa/ODR/* ${INS_DIR}/
   return 0
+}
+
+check_input_type () { 
+  set -x
+  
 }
 
 get_data() {
@@ -98,7 +104,7 @@ fix_res_path()
   for myfile in `find $1 -name "*.res"`
     do
       ciop-log "DEBUG" "updating res path in ${myfile}"
-      sed -i "s#\(.* RESULTFILE.*\)\(/tmp/.*\)#\1${myfile}#g" ${myfile}
+      sed -i 's#\(.* RESULTFILE.*\)\(/tmp/.*\)#\1${myfile}#g' ${myfile}
 
       # let's find the slc filename and location
       myslc="`basename $( grep 'Data_output_file.*\.slc' $myfile | sed 's#.*\(/tmp.*\)#\1#g' ) 2> /dev/null`"

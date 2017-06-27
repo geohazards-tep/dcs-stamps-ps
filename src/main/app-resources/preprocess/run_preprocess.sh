@@ -6,7 +6,7 @@ mode=$1
 
 # source extra functions
 source ${_CIOP_APPLICATION_PATH}/lib/stamps-helpers.sh
-
+export PATH=/home/_andreas_noa/doris4-0-4/bin:$PATH
 # source StaMPS
 source /opt/StaMPS_v3.3b1/StaMPS_CONFIG.bash
 
@@ -90,7 +90,9 @@ main() {
   [ $? -ne 0 ] && return ${ERR_LOOKS_PRM}  
 
   ciop-log "INFO" "creating the directory structure in $TMPDIR"
-
+  ciop-log "INFO" "creating the directory structure in $TMPDIR"
+  premaster_cat="$( ciop-getparam master )"
+  [ $? -ne 0 ] && return ${ERR_MASTER_REF}
   # download data into $RAW
   while read line
   do
@@ -112,7 +114,8 @@ main() {
     [ $? -ne 0 ] && return ${ERR_SCENE}
     fix_res_path "$RAW"
     ciop-log "INFO" "Processing scene: ${scene}"
-
+    bname=$( basename ${scene} )
+	
     # which orbits (defined in application.xml)
     orbits="$( get_orbit_flag )"
     [ $? -ne 0 ] && return ${ERR_ORBIT_FLAG}
@@ -123,16 +126,12 @@ main() {
     [ $? -ne 0 ] && return ${ERR_SENSING_DATE}
     ciop-log "INFO" "Sensing date: ${sensing_date}"        
 
-    ciop-log "INFO" "Get Sensor"
-    mission=$( get_mission ${scene} | tr "A-Z" "a-z" )
-    [ $? -ne 0 ] && return ${ERR_MISSION}
-    [ ${mission} == "asar" ] && flag="envi"
-    ciop-log "INFO" "Sensor: ${mission}"   
-
-    ciop-log "INFO" "Get Auxilary data"
-    get_aux ${mission} ${sensing_date} ${orbits}
-    [ $? -ne 0 ] && return ${ERR_AUX}
-
+	cd ${RAW}
+	
+	mkdir ${sensing_date}
+	cd ${sensing_date}
+	tar xzf ${RAW}/${bname}
+	
     # link_raw
     ciop-log "INFO" "Set-up Stamps Structure (i.e. run step link_raw)"
     link_raw ${RAW} ${PROCESS}
@@ -149,33 +148,37 @@ main() {
 	#MPR=$(((($MAS_LC-$MAS_FC) / 2) + (($MAS_LC-$MAS_FC) % 2 > 0) ))
 	#MPR=$((MPR + MAS_FC))
 
-	echo "before_z_ext= -9000" > $roiproc
-	echo "after_z_ext= -9000" >> $roiproc
-	echo "near_rng_ext= +300" >> $roiproc
-	echo "far_rng_ext= -4500" >> $roiproc
+	  echo "before_z_ext= -17000" > $roiproc
+	  echo "after_z_ext= -5000" >> $roiproc
+	  echo "near_rng_ext= -3400" >> $roiproc
+	  echo "far_rng_ext= -400" >> $roiproc	
 	
     # focalize SLC
     scene_folder=${SLC}/${sensing_date}
     cd ${scene_folder}
-    slc_bin="step_slc_${flag}$( [ ${orbits} == "VOR" ] && [ ${mission} == "asar" ] && echo "_vor" )"
+    slc_bin="step_slc_ers"
     ciop-log "INFO" "Run ${slc_bin} for ${sensing_date}"
     ${slc_bin}
     [ $? -ne 0 ] && return ${ERR_SLC}
-
+    premaster_date=`basename ${PROCESS}/I* | cut -c 7-14`
     # writing original image url for node master_select (need for newly master)
     echo ${scene_ref} > ${sensing_date}.url  
-
+	cd ${PROCESS}/INSAR_${premaster_date}/
+	echo ${premaster_cat} > ${premaster_date}.url  
+	cp ${premaster_date}.url ${scene_folder}/
+	cp ${premaster_date}.url ${PROCESS}/INSAR_${premaster_date}/${premaster_date}.url
+	cp ${premaster_date}.url ${scene_folder}/${premaster_date}.url
+    ciop-log "INFO" "Sensing Date URL: ${sensing_date}.url"
+	ciop-log "INFO" "Master Date URL: ${premaster_date}.url"
     # publish for next node
     cd ${SLC}
     ciop-log "INFO" "create tar"
     tar cvfz ${sensing_date}.tgz ${sensing_date}
     [ $? -ne 0 ] && return ${ERR_SLC_TAR}
-
+    cp ${PROCESS}/INSAR_${premaster_date}/${premaster_date}.url ${scene_folder}/${premaster_date}.url
     ciop-log "INFO" "Publishing -a"
     slc_folders="$( ciop-publish -a ${SLC}/${sensing_date}.tgz )"
     [ $? -ne 0 ] && return ${ERR_SLC_PUBLISH}
-
-    premaster_date=`basename ${PROCESS}/I* | cut -c 7-14`
     [ ! -d "${PROCESS}/INSAR_${premaster_date}" ] && ciop-log "DEBUG" "${PROCESS}/INSAR_${premaster_date} does not exist" || ciop-log "DEBUG" "${PROCESS}/INSAR_${premaster_date} exists"
     if [ ! -d "${PROCESS}/INSAR_${premaster_date}" ]
     then
@@ -196,7 +199,7 @@ main() {
 	  	  
       mkdir ${sensing_date}
       cd ${sensing_date}
-
+      cp ${PROCESS}/INSAR_${premaster_date}/${premaster_date}.url .
       # step_orbit (extract orbits)
       ln -s ${SLC}/${sensing_date} SLC
       ciop-log "INFO" "step_orbit for ${sensing_date} "
@@ -204,11 +207,11 @@ main() {
       [ $? -ne 0 ] && return ${ERR_STEP_ORBIT}
   
       ciop-log "INFO" "doing image coarse correlation for ${sensing_date}"
-      step_coarse
+	  step_coarse
       [ $? -ne 0 ] && return ${ERR_STEP_COARSE}
 
       cd ../
-
+      cp ${PROCESS}/INSAR_${premaster_date}/${premaster_date}.url .
       ciop-log "INFO" "create tar"
       tar cvfz INSAR_${sensing_date}.tgz ${sensing_date}
       [ $? -ne 0 ] && return ${ERR_INSAR_TAR}

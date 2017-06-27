@@ -6,7 +6,7 @@ mode=$1
 
 # source extra functions
 source ${_CIOP_APPLICATION_PATH}/lib/stamps-helpers.sh
-
+export PATH=/home/_andreas_noa/doris4-0-4/bin:$PATH
 # source StaMPS
 source /opt/StaMPS_v3.3b1/StaMPS_CONFIG.bash
 
@@ -143,15 +143,15 @@ main() {
       rm -f coreg.out
   
       # change number of corr. windows to 500 for more robust processsing (especially for scenes with water)
-      sed -i 's/CC_NWIN.*/CC_NWIN         500/' coarse.dorisin  
-    
+      sed -i 's/CC_NWIN.*/CC_NWIN         21/' coarse.dorisin  
+      step_orbit
       ciop-log "INFO" "coarse image correlation for ${sensing_date}"
       doris coarse.dorisin > step_coarse.log
       [ $? -ne 0 ] && return ${ERR_STEP_COARSE}
   
-      # get all calculated coarse offsets (line 85 - 584) and take out the value which appears most for better calculation of overall offset
-      offsetL=`cat coreg.out | sed -n -e 85,584p | awk $'{print $5}' | sort | uniq -c | sort -g -r | head -1 | awk $'{print $2}'`
-      offsetP=`cat coreg.out | sed -n -e 85,584p | awk $'{print $6}' | sort | uniq -c | sort -g -r | head -1 | awk $'{print $2}'`
+      # get all calculated coarse offsets (line 85 - 105) and take out the value which appears most for better calculation of overall offset
+      offsetL=`cat coreg.out | sed -n -e 85,105p | awk $'{print $5}' | sort | uniq -c | sort -g -r | head -1 | awk $'{print $2}'`
+      offsetP=`cat coreg.out | sed -n -e 85,105p | awk $'{print $6}' | sort | uniq -c | sort -g -r | head -1 | awk $'{print $2}'`
 
       # write the lines with the new overall offset into variable   
       replaceL=`echo -e "Coarse_correlation_translation_lines: \t" $offsetL`
@@ -160,7 +160,12 @@ main() {
       # replace full line of overall offset
       sed -i "s/Coarse_correlation_translation_lines:.*/$replaceL/" coreg.out
       sed -i "s/Coarse_correlation_translation_pixels:.*/$replaceP/" coreg.out
-    
+	  
+	  ciop-log "INFO" "Coarse_correlation_translation_lines: ${offsetL}"
+	  ciop-log "INFO" "Coarse_correlation_translation_pixels: ${offsetP}"
+	  ciop-log "INFO" "lines with the new overall offset ${replaceL}"
+	  ciop-log "INFO" "lines with the new overall offset ${replaceP}"
+	  
       ciop-log "INFO" "fine image correlation for ${sensing_date}"
       step_coreg_simple
       [ $? -ne 0 ] && return ${ERR_STEP_COREG}
@@ -215,7 +220,7 @@ main() {
   done
 
   ciop-log "INFO" "removing temporary files $TMPDIR"
-  rm -rf ${TMPDIR}
+  #rm -rf ${TMPDIR}
 }
 
 cat | main
